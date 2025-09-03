@@ -9,7 +9,6 @@ export default function App() {
   const [stocks, setStocks] = useState([]);
 
   useEffect(() => {
-    
     const savedLoginState = localStorage.getItem(LOGIN_KEY_NAME);
     if (savedLoginState === "true") {
       setLoggedIn(true);

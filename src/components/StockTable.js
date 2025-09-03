@@ -49,7 +49,9 @@ export const StockTable = ({ stocks }) => {
   };
 
   const handleRemoveFromWatchlist = (stockSymbol) => {
-    setWatchlist((prev) => prev.filter((stock) => stock.symbol !== stockSymbol));
+    setWatchlist((prev) =>
+      prev.filter((stock) => stock.symbol !== stockSymbol)
+    );
   };
 
   const isInWatchlist = (stockSymbol) => {
@@ -59,102 +61,155 @@ export const StockTable = ({ stocks }) => {
   // The main layout for the logged-in user
   return (
     <div className="container-fluid my-4">
-        {/* Main Stock Table Card */}
-        <div className="card shadow-sm mb-4">
+      {/* Main Stock Table Card */}
+      <div className="card shadow-sm mb-4">
+        <div className="card-header">
+          <h2 className="h5 mb-0">Market Overview</h2>
+        </div>
+        <div className="card-body">
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th scope="col" className="p-3">
+                    Symbol
+                  </th>
+                  <th scope="col" className="p-3">
+                    Company
+                  </th>
+                  <th scope="col" className="p-3 text-end">
+                    Price
+                  </th>
+                  <th scope="col" className="p-3 text-end">
+                    Change
+                  </th>
+                  <th scope="col" className="p-3 text-center">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {stocks.map((stock) => (
+                  <tr key={stock.symbol}>
+                    <td className="fw-bold">{stock.symbol}</td>
+                    <td>{stock.name}</td>
+                    <td className="text-end">${stock.price.toFixed(2)}</td>
+                    <td
+                      className={`text-end fw-semibold ${
+                        stock.change >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {stock.change >= 0 ? (
+                        <i className="bi bi-arrow-up"></i>
+                      ) : (
+                        <i className="bi bi-arrow-down"></i>
+                      )}{" "}
+                      {Math.abs(stock.change).toFixed(2)}
+                    </td>
+                    <td className="text-center">
+                      <div className="btn-group" role="group">
+                        <button
+                          onClick={() => handleTrade(stock, "BUY")}
+                          className="btn btn-sm btn-outline-success"
+                        >
+                          <i className="bi bi-bag-plus-fill me-1"></i>Buy
+                        </button>
+                        <button
+                          onClick={() => handleTrade(stock, "SELL")}
+                          className="btn btn-sm btn-outline-danger"
+                        >
+                          <i className="bi bi-bag-dash-fill me-1"></i>Sell
+                        </button>
+                        {isInWatchlist(stock.symbol) ? (
+                          <button
+                            onClick={() =>
+                              handleRemoveFromWatchlist(stock.symbol)
+                            }
+                            className="btn btn-sm btn-outline-warning"
+                          >
+                            <i className="bi bi-star-fill me-1"></i>Watching
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleAddToWatchlist(stock)}
+                            className="btn btn-sm btn-outline-secondary"
+                          >
+                            <i className="bi bi-star me-1"></i>Watch
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Portfolio and Watchlist Side-by-Side */}
+      <div className="row g-4">
+        <div className="col-lg-6">
+          <div className="card shadow-sm h-100">
             <div className="card-header">
-                <h2 className="h5 mb-0">Market Overview</h2>
+              <h2 className="h5 mb-0">My Portfolio</h2>
             </div>
-            <div className="card-body">
-                <div className="table-responsive">
-                    <table className="table table-hover align-middle mb-0">
-                        <thead className="table-light">
-                            <tr>
-                                <th scope="col" className="p-3">Symbol</th>
-                                <th scope="col" className="p-3">Company</th>
-                                <th scope="col" className="p-3 text-end">Price</th>
-                                <th scope="col" className="p-3 text-end">Change</th>
-                                <th scope="col" className="p-3 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stocks.map((stock) => (
-                                <tr key={stock.symbol}>
-                                    <td className="fw-bold">{stock.symbol}</td>
-                                    <td>{stock.name}</td>
-                                    <td className="text-end">${stock.price.toFixed(2)}</td>
-                                    <td className={`text-end fw-semibold ${stock.change >= 0 ? "text-success" : "text-danger"}`}>
-                                        {stock.change >= 0 ? <i className="bi bi-arrow-up"></i> : <i className="bi bi-arrow-down"></i>} {Math.abs(stock.change).toFixed(2)}
-                                    </td>
-                                    <td className="text-center">
-                                        <div className="btn-group" role="group">
-                                            <button onClick={() => handleTrade(stock, "BUY")} className="btn btn-sm btn-outline-success"><i className="bi bi-bag-plus-fill me-1"></i>Buy</button>
-                                            <button onClick={() => handleTrade(stock, "SELL")} className="btn btn-sm btn-outline-danger"><i className="bi bi-bag-dash-fill me-1"></i>Sell</button>
-                                            {isInWatchlist(stock.symbol) ? (
-                                                <button onClick={() => handleRemoveFromWatchlist(stock.symbol)} className="btn btn-sm btn-outline-warning"><i className="bi bi-star-fill me-1"></i>Watching</button>
-                                            ) : (
-                                                <button onClick={() => handleAddToWatchlist(stock)} className="btn btn-sm btn-outline-secondary"><i className="bi bi-star me-1"></i>Watch</button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        {/* Portfolio and Watchlist Side-by-Side */}
-        <div className="row g-4">
-            <div className="col-lg-6">
-                <div className="card shadow-sm h-100">
-                    <div className="card-header">
-                        <h2 className="h5 mb-0">My Portfolio</h2>
+            {portfolio.length === 0 ? (
+              <div className="card-body text-center text-muted">
+                <p className="mb-0">Your portfolio is empty.</p>
+              </div>
+            ) : (
+              <ul className="list-group list-group-flush">
+                {portfolio.map((p) => (
+                  <li
+                    key={p.symbol}
+                    className="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <span className="fw-bold">{p.symbol}</span>
+                      <small className="text-muted d-block">{p.name}</small>
                     </div>
-                    {portfolio.length === 0 ? (
-                        <div className="card-body text-center text-muted">
-                            <p className="mb-0">Your portfolio is empty.</p>
-                        </div>
-                    ) : (
-                        <ul className="list-group list-group-flush">
-                            {portfolio.map((p) => (
-                                <li key={p.symbol} className="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span className="fw-bold">{p.symbol}</span>
-                                        <small className="text-muted d-block">{p.name}</small>
-                                    </div>
-                                    <span className="badge bg-primary rounded-pill">{p.shares} shares</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            </div>
-            <div className="col-lg-6">
-                <div className="card shadow-sm h-100">
-                    <div className="card-header">
-                        <h2 className="h5 mb-0">My Watchlist</h2>
-                    </div>
-                    {watchlist.length === 0 ? (
-                        <div className="card-body text-center text-muted">
-                            <p className="mb-0">Your watchlist is empty.</p>
-                        </div>
-                    ) : (
-                         <ul className="list-group list-group-flush">
-                            {watchlist.map((stock) => (
-                                <li key={stock.symbol} className="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span className="fw-bold">{stock.symbol}</span>
-                                        <small className="text-muted d-block">{stock.name}</small>
-                                    </div>
-                                    <button onClick={() => handleRemoveFromWatchlist(stock.symbol)} className="btn btn-sm btn-close" aria-label="Remove from watchlist"></button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            </div>
+                    <span className="badge bg-primary rounded-pill">
+                      {p.shares} shares
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
+        <div className="col-lg-6">
+          <div className="card shadow-sm h-100">
+            <div className="card-header">
+              <h2 className="h5 mb-0">My Watchlist</h2>
+            </div>
+            {watchlist.length === 0 ? (
+              <div className="card-body text-center text-muted">
+                <p className="mb-0">Your watchlist is empty.</p>
+              </div>
+            ) : (
+              <ul className="list-group list-group-flush">
+                {watchlist.map((stock) => (
+                  <li
+                    key={stock.symbol}
+                    className="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <span className="fw-bold">{stock.symbol}</span>
+                      <small className="text-muted d-block">{stock.name}</small>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveFromWatchlist(stock.symbol)}
+                      className="btn btn-sm btn-close"
+                      aria-label="Remove from watchlist"
+                    ></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
