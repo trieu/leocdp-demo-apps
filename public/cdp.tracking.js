@@ -160,9 +160,8 @@ LeoObserver.addTrackingAllButtons = function () {
 // init proxy
 (function () {
   // the main proxy CDP JS
-  var leoproxyJsPath = "/js/leo-observer/leo.proxy.min.js";
-  var src =
-    location.protocol + "//" + window.leoObserverCdnDomain + leoproxyJsPath;
+  var leoproxyJsPath = "/public/js/leo-observer-src/leo.proxy.js";
+  var src = location.protocol + "//" + window.leoObserverCdnDomain + leoproxyJsPath;
   var jsNode = document.createElement("script");
   jsNode.async = true;
   jsNode.defer = true;
