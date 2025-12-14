@@ -1,105 +1,115 @@
 import React, { useState, useEffect } from "react";
 
-// Add a comment to remind developers to include Bootstrap in their project
-// Make sure to include Bootstrap 5 CSS and Icons in your project's public/index.html
-
-export const StockTable = ({ stocks }) => {
-  // Initialize state with localStorage data or empty array
+/**
+ * StockTable
+ *
+ * Responsibilities:
+ * - Display market table
+ * - Handle Buy / Sell
+ * - Handle Watchlist
+ * - Emit "view report" (chart selection)
+ *
+ * @param stocks Array of stock objects
+ * @param onSelectStock function(stock) -> show candlestick chart
+ */
+export const StockTable = ({ stocks, onSelectStock }) => {
+  // ===== Portfolio =====
   const [portfolio, setPortfolio] = useState(() => {
-    const savedPortfolio = localStorage.getItem("portfolio");
-    return savedPortfolio ? JSON.parse(savedPortfolio) : [];
-  });
-  const [watchlist, setWatchlist] = useState(() => {
-    const savedWatchlist = localStorage.getItem("watchlist");
-    return savedWatchlist ? JSON.parse(savedWatchlist) : [];
+    const saved = localStorage.getItem("portfolio");
+    return saved ? JSON.parse(saved) : [];
   });
 
-  // Save portfolio to localStorage whenever it changes
+  // ===== Watchlist =====
+  const [watchlist, setWatchlist] = useState(() => {
+    const saved = localStorage.getItem("watchlist");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
   }, [portfolio]);
 
-  // Save watchlist to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("watchlist", JSON.stringify(watchlist));
   }, [watchlist]);
 
+  // ===== Trading =====
   const handleTrade = (stock, action) => {
     setPortfolio((prev) => {
       const existing = prev.find((p) => p.symbol === stock.symbol);
+
       if (existing) {
-        return prev.map((p) =>
+        return prev
+          .map((p) =>
             p.symbol === stock.symbol
-              ? { ...p, shares: p.shares + (action === "BUY" ? 1 : -1) }
+              ? {
+                  ...p,
+                  shares: p.shares + (action === "BUY" ? 1 : -1),
+                }
               : p
           )
           .filter((p) => p.shares > 0);
-      } else if (action === "BUY") {
-        
+      }
+
+      if (action === "BUY") {
         return [...prev, { ...stock, shares: 1 }];
       }
+
       return prev;
     });
 
-    if(action === "BUY"){
-      LeoObserver.recordEventBuyStock({ stockSymbol: stock.symbol })
-    }
-    else {
-      LeoObserver.recordEventSellStock({ stockSymbol: stock.symbol })
-    }
-  };
-
-  const handleAddToWatchlist = (stockToAdd) => {
-    if (!watchlist.some((stock) => stock.symbol === stockToAdd.symbol)) {
-      setWatchlist((prev) => [...prev, stockToAdd]);
-      LeoObserver.recordEventRemoveWatchlist({ stockSymbol: stockToAdd.symbol })
+    if (action === "BUY") {
+      LeoObserver.recordEventBuyStock({ stockSymbol: stock.symbol });
+    } else {
+      LeoObserver.recordEventSellStock({ stockSymbol: stock.symbol });
     }
   };
 
-  const handleRemoveFromWatchlist = (stockSymbol) => {
-    setWatchlist((prev) =>
-      prev.filter((stock) => stock.symbol !== stockSymbol)
-    );
-    LeoObserver.recordEventRemoveWatchlist({ stockSymbol: stockSymbol })
+  // ===== Watchlist =====
+  const isInWatchlist = (symbol) => watchlist.some((s) => s.symbol === symbol);
+
+  const addToWatchlist = (stock) => {
+    if (!isInWatchlist(stock.symbol)) {
+      setWatchlist((prev) => [...prev, stock]);
+      LeoObserver.recordEventAddWatchlist({ stockSymbol: stock.symbol });
+    }
   };
 
-  const isInWatchlist = (stockSymbol) => {
-    return watchlist.some((stock) => stock.symbol === stockSymbol);
+  const removeFromWatchlist = (symbol) => {
+    setWatchlist((prev) => prev.filter((s) => s.symbol !== symbol));
+    LeoObserver.recordEventRemoveWatchlist({ stockSymbol: symbol });
   };
 
-  // The main layout for the logged-in user
+  // ===== Render =====
   return (
     <div className="container-fluid my-4">
-      {/* Main Stock Table Card */}
+      {/* ===== Market Table ===== */}
       <div className="card shadow-sm mb-4">
         <div className="card-header">
           <h2 className="h5 mb-0">Market Overview</h2>
         </div>
+
         <div className="card-body">
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
                 <tr>
-                  <th scope="col" className="p-3">
-                    Symbol
-                  </th>
-                  <th scope="col" className="p-3">
-                    Company
-                  </th>
-                  <th scope="col" className="p-3 text-end">
-                    Price
-                  </th>
-                  <th scope="col" className="p-3 text-end">
-                    Change
-                  </th>
-                  <th scope="col" className="p-3 text-center">
-                    Actions
-                  </th>
+                  <th>Symbol</th>
+                  <th>Company</th>
+                  <th className="text-end">Price</th>
+                  <th className="text-end">Change</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {stocks.map((stock) => (
-                  <tr key={stock.symbol}>
+                  <tr
+                    key={stock.symbol}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => onSelectStock(stock)}
+                    title="Click to view price chart"
+                  >
                     <td className="fw-bold">{stock.symbol}</td>
                     <td>{stock.name}</td>
                     <td className="text-end">${stock.price.toFixed(2)}</td>
@@ -109,43 +119,60 @@ export const StockTable = ({ stocks }) => {
                       }`}
                     >
                       {stock.change >= 0 ? (
-                        <i className="bi bi-arrow-up"></i>
+                        <i className="bi bi-arrow-up" />
                       ) : (
-                        <i className="bi bi-arrow-down"></i>
+                        <i className="bi bi-arrow-down" />
                       )}{" "}
                       {Math.abs(stock.change).toFixed(2)}
                     </td>
-                    <td className="text-center">
-                      <div className="btn-group" role="group">
+
+                    {/* ===== Actions ===== */}
+                    <td
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="btn-group btn-group-sm">
                         <button
+                          className="btn btn-outline-success"
                           onClick={() => handleTrade(stock, "BUY")}
-                          className="btn btn-sm btn-outline-success"
                         >
-                          <i className="bi bi-bag-plus-fill me-1"></i>Buy
+                          <i className="bi bi-bag-plus-fill me-1" />
+                          Buy
                         </button>
+
                         <button
+                          className="btn btn-outline-danger"
                           onClick={() => handleTrade(stock, "SELL")}
-                          className="btn btn-sm btn-outline-danger"
                         >
-                          <i className="bi bi-bag-dash-fill me-1"></i>Sell
+                          <i className="bi bi-bag-dash-fill me-1" />
+                          Sell
                         </button>
+
                         {isInWatchlist(stock.symbol) ? (
                           <button
-                            onClick={() =>
-                              handleRemoveFromWatchlist(stock.symbol)
-                            }
-                            className="btn btn-sm btn-outline-primary"
+                            className="btn btn-outline-primary"
+                            onClick={() => removeFromWatchlist(stock.symbol)}
                           >
-                            <i className="bi bi-star-fill me-1"></i>Watching
+                            <i className="bi bi-star-fill me-1" />
+                            Watching
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleAddToWatchlist(stock)}
-                            className="btn btn-sm btn-outline-secondary"
+                            className="btn btn-outline-secondary"
+                            onClick={() => addToWatchlist(stock)}
                           >
-                            <i className="bi bi-star me-1"></i>Watch
+                            <i className="bi bi-star me-1" />
+                            Watch
                           </button>
                         )}
+
+                        <button
+                          className="btn btn-outline-dark"
+                          onClick={() => onSelectStock(stock)}
+                        >
+                          <i className="bi bi-graph-up me-1" />
+                          Report
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -156,7 +183,7 @@ export const StockTable = ({ stocks }) => {
         </div>
       </div>
 
-      {/* Portfolio and Watchlist Side-by-Side */}
+      {/* ===== Portfolio & Watchlist (unchanged) ===== */}
       <div className="row g-4">
         <div className="col-lg-6">
           <div className="card shadow-sm h-100">

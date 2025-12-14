@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { StockTable } from "./components/StockTable";
+import { StockChart } from "./components/StockChart";
 
 export default function App() {
   const LOGIN_KEY_NAME = "isLoggedIn";
@@ -11,9 +12,9 @@ export default function App() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [stocks, setStocks] = useState([]);
+  const [selectedStock, setSelectedStock] = useState(null);
 
-  // Load configs from window.DEFAULT_CONFIGS on mount
-  useEffect(() => {    
+  useEffect(() => {
     if (typeof window !== "undefined" && window.DEFAULT_CONFIGS) {
       setConfigs(window.DEFAULT_CONFIGS);
       setUsername(window.DEFAULT_CONFIGS.TEST_USER_NAME || "");
@@ -21,20 +22,20 @@ export default function App() {
     }
   }, []);
 
-  // Fetch stocks when configs are available
   useEffect(() => {
     if (configs?.DATA_SOURCE_URL) {
       fetch(configs.DATA_SOURCE_URL)
         .then((res) => res.json())
-        .then((data) => setStocks(data))
+        .then((data) => {
+          setStocks(data);
+          setSelectedStock(data[0] || null); // default selection
+        })
         .catch((err) => console.error("Error loading mock data:", err));
     }
   }, [configs]);
 
-  // Check login state
   useEffect(() => {
-    const savedLoginState = localStorage.getItem(LOGIN_KEY_NAME);
-    if (savedLoginState === "true") {
+    if (localStorage.getItem(LOGIN_KEY_NAME) === "true") {
       setLoggedIn(true);
     }
   }, []);
@@ -45,25 +46,30 @@ export default function App() {
       username === configs.TEST_USER_NAME &&
       password === configs.TEST_USER_PASSWORD
     ) {
-      var email = username + "@example.com";
-      LeoObserverProxy.recordActionEvent("login-success", {"username": username,"email":email});
+      const email = username + "@example.com";
+      if (window.LeoObserverProxy) {
+        LeoObserverProxy.recordActionEvent("login-success", {
+          username,
+          email
+        });
+      }
       setLoggedIn(true);
-      localStorage.setItem(LOGIN_KEY_NAME, "true");     
+      localStorage.setItem(LOGIN_KEY_NAME, "true");
     } else {
       alert("Invalid credentials");
     }
   };
 
   const handleLogout = () => {
-    LeoObserver.recordEventUserLogout({ username: username })
+    if (window.LeoObserver) {
+      LeoObserver.recordEventUserLogout({ username });
+    }
     setLoggedIn(false);
     setUsername("");
     setPassword("");
     localStorage.removeItem(LOGIN_KEY_NAME);
-    
   };
 
-  // The Login form is now a clean, centered Bootstrap Card
   if (!loggedIn) {
     return (
       <div className="container mt-5">
@@ -72,7 +78,7 @@ export default function App() {
             <div className="card shadow-sm border-0">
               <div className="card-body p-4">
                 <h2 className="card-title text-center mb-4 fs-4">Login</h2>
-                <form onSubmit={handleLogin} autoComplete="off" >
+                <form onSubmit={handleLogin} autoComplete="off">
                   <div className="form-floating mb-3">
                     <input
                       type="text"
@@ -97,11 +103,9 @@ export default function App() {
                     />
                     <label htmlFor="passwordInput">Password</label>
                   </div>
-                  <div className="d-grid">
-                    <button type="submit" className="btn btn-primary btn-lg">
-                      Login
-                    </button>
-                  </div>
+                  <button className="btn btn-primary w-100 btn-lg">
+                    Login
+                  </button>
                 </form>
               </div>
             </div>
@@ -112,14 +116,20 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">📈 Stock Trading Dashboard - Demo CDP </h1>
+    <div className="container-fluid p-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="fw-bold">📈 Stock Trading Dashboard – Demo CDP</h1>
         <button onClick={handleLogout} className="btn btn-danger">
           Logout
         </button>
       </div>
-      <StockTable stocks={stocks} />
+
+      <StockChart stock={selectedStock} />
+
+      <StockTable
+        stocks={stocks}
+        onSelectStock={setSelectedStock}
+      />
     </div>
   );
 }
