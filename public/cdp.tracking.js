@@ -21,6 +21,11 @@ if (typeof window.LeoObserverProxy === "object") {
     LeoObserverProxy.recordViewEvent("page-view", eventData);
   };
 
+  LeoObserver.recordEventStockView = function (eventData) {
+    eventData = eventData ? eventData : {};
+    LeoObserverProxy.recordViewEvent("stock-view", eventData);
+  };
+
   //  track Action Event "ClickDetails"
   LeoObserver.recordEventClickDetails = function (eventData) {
     eventData = eventData ? eventData : {};

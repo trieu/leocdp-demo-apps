@@ -84,7 +84,7 @@ export default function App() {
     setSelectedStock(stock);
 
     if (window.LeoObserver && stock?.symbol) {
-      LeoObserver.recordEventCheckStock({
+      LeoObserver.recordEventStockView({
         symbol: stock.symbol
       });
     }
