@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { 
-  BrowserRouter, 
-  Routes, 
-  Route, 
-  NavLink, 
-  Navigate, 
-  Outlet, 
-  useLocation 
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  NavLink,
+  Navigate,
+  Outlet,
+  useLocation,
 } from "react-router-dom";
 
 // === Component Imports ===
@@ -17,6 +17,7 @@ import InvestingCourse from "./components/InvestingCourses";
 import BookReviews from "./components/BookReviews";
 import { StockTable } from "./components/StockTable";
 import { StockChart } from "./components/StockChart";
+import MyProfile from "./components/MyProfile";
 
 // ==========================================
 // 1. CONFIGURATION
@@ -38,27 +39,32 @@ const MENU_ITEMS = [
 
 const useAuth = (configs) => {
   const [isLoggedIn, setIsLoggedIn] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem(LOGIN_KEY_NAME) === "true"
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem(LOGIN_KEY_NAME) === "true"
   );
-  
-  // Note: We removed 'username' and 'password' state from here 
+
+  // Note: We removed 'username' and 'password' state from here
   // because the LoginScreen now handles its own input state.
 
   const login = (inputUser, inputPass) => {
     // Validate against configs
-    if (inputUser === configs?.TEST_USER_NAME && inputPass === configs?.TEST_USER_PASSWORD) {
+    if (
+      inputUser === configs?.TEST_USER_NAME &&
+      inputPass === configs?.TEST_USER_PASSWORD
+    ) {
       localStorage.setItem(LOGIN_KEY_NAME, "true");
       setIsLoggedIn(true);
-      
+
       // Analytics
       if (window.LeoObserverProxy) {
-        window.LeoObserverProxy.recordActionEvent("login-success", { 
-          username: inputUser, 
-          email: inputUser + "@example.com" 
+        window.LeoObserverProxy.recordActionEvent("login-success", {
+          username: inputUser,
+          email: inputUser + "@example.com",
         });
       }
       return true;
-    } 
+    }
     return false;
   };
 
@@ -110,33 +116,52 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     top: 0,
     zIndex: 1000,
     borderRight: "1px solid #dee2e6",
-    backgroundColor: "#fff" // Changed to white for cleaner look
+    backgroundColor: "#fff", // Changed to white for cleaner look
   };
 
   return (
-    <div className="d-flex flex-column flex-shrink-0 p-3 shadow-sm" style={sidebarStyle}>
-      <div className="d-flex align-items-center mb-4 text-decoration-none text-dark" style={{ height: "40px" }}>
-        <button 
-          className="btn btn-sm btn-light border me-2" 
+    <div
+      className="d-flex flex-column flex-shrink-0 p-3 shadow-sm"
+      style={sidebarStyle}
+    >
+      <div
+        className="d-flex align-items-center mb-4 text-decoration-none text-dark"
+        style={{ height: "40px" }}
+      >
+        <button
+          className="btn btn-sm btn-light border me-2"
           onClick={toggleSidebar}
         >
           {isCollapsed ? "☰" : "⬅"}
         </button>
-        {!isCollapsed && <span className="fs-5 fw-bold text-primary"> Investing 101 </span>}
+        {!isCollapsed && (
+          <span className="fs-5 fw-bold text-primary"> Investing 101 </span>
+        )}
       </div>
-      
+
       <ul className="nav nav-pills flex-column mb-auto">
         {MENU_ITEMS.map((item) => (
           <li className="nav-item mb-2" key={item.path}>
-            <NavLink 
+            <NavLink
               to={item.path}
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center ${isActive ? "active bg-primary text-white shadow-sm" : "link-dark"}`
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center ${
+                  isActive
+                    ? "active bg-primary text-white shadow-sm"
+                    : "link-dark"
+                }`
               }
               title={isCollapsed ? item.label : ""}
             >
-              <span className="fs-5 d-flex align-items-center justify-content-center" style={{ width: "24px" }}>{item.icon}</span>
-              {!isCollapsed && <span className="ms-3 fw-medium">{item.label}</span>}
+              <span
+                className="fs-5 d-flex align-items-center justify-content-center"
+                style={{ width: "24px" }}
+              >
+                {item.icon}
+              </span>
+              {!isCollapsed && (
+                <span className="ms-3 fw-medium">{item.label}</span>
+              )}
             </NavLink>
           </li>
         ))}
@@ -160,26 +185,47 @@ const ProtectedLayout = ({ auth, onLogout }) => {
     backgroundColor: "#f4f6f9", // Light grey background for content area
   };
 
-  const currentItem = MENU_ITEMS.find(item => item.path === location.pathname);
+  const currentItem = MENU_ITEMS.find(
+    (item) => item.path === location.pathname
+  );
 
   return (
     <>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
-      
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+      />
+
       <div style={contentStyle}>
         <div className="container-fluid p-4">
           {/* Top Header */}
-          <div id="top-header" className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+          <div
+            id="top-header"
+            className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm"
+          >
             <h1 className="h4 m-0 fw-bold text-secondary">
               {currentItem ? currentItem.label : "Dashboard"}
             </h1>
-            <button onClick={onLogout} className="btn btn-outline-danger btn-sm px-3">
-              Logout
-            </button>
+
+            <div className="d-flex align-items-center">
+              {/* User Profile */}
+              <MyProfile />
+
+              {/* Logout */}
+              <button
+                onClick={onLogout}
+                className="btn btn-outline-danger btn-sm px-3"
+              >
+                Logout
+              </button>
+            </div>
           </div>
-          
+
           {/* Main Content Card */}
-          <div className="bg-white p-4 rounded shadow-sm" style={{ minHeight: "75vh" }}>
+          <div
+            className="bg-white p-4 rounded shadow-sm"
+            style={{ minHeight: "75vh" }}
+          >
             <Outlet />
           </div>
         </div>
@@ -201,19 +247,22 @@ export default function App() {
       <Routes>
         {/* Pass auth prop to the new LoginScreen component */}
         <Route path="/login" element={<LoginScreen auth={auth} />} />
-        
+
         <Route element={<ProtectedLayout auth={auth} onLogout={auth.logout} />}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Home />} />
           <Route path="/market-trends" element={<MarketTrends />} />
-          <Route path="/trading" element={
-            <>
-              <div className="mb-4">
-                <StockChart stock={selectedStock} />
-              </div>
-              <StockTable stocks={stocks} onSelectStock={setSelectedStock} />
-            </>
-          } />
+          <Route
+            path="/trading"
+            element={
+              <>
+                <div className="mb-4">
+                  <StockChart stock={selectedStock} />
+                </div>
+                <StockTable stocks={stocks} onSelectStock={setSelectedStock} />
+              </>
+            }
+          />
           <Route path="/knowledge" element={<InvestingCourse />} />
           <Route path="/book-reviews" element={<BookReviews />} />
         </Route>
