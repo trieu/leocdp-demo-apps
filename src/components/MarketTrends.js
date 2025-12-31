@@ -1,18 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Chart from "react-apexcharts";
 import classNames from "classnames";
 
 const DATA_URL = "/mock/market-summary.json";
 
-/**
- * MarketTrends
- * - Fully data-driven from JSON
- * - Hover / click tracking → CDP
- * - ApexCharts with datetime tooltip
- */
 export default function MarketTrends() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const focusedMetricRef = useRef(null);
 
   /* ================================
    * Load data
@@ -43,7 +38,11 @@ export default function MarketTrends() {
   /* ================================
    * Helpers
    * ================================ */
-  const trackFocus = (metric) => {
+  const trackFocusOnce = (metric) => {
+    if (focusedMetricRef.current === metric) return;
+
+    focusedMetricRef.current = metric;
+
     if (window.LeoObserver) {
       window.LeoObserver.recordEventFocusIndexMetric({
         indexMetric: metric,
@@ -51,16 +50,18 @@ export default function MarketTrends() {
     }
   };
 
-  const buildSeries = (series) => ({
-    series: [
-      {
-        data: series.map((p) => ({
-          x: new Date(p.time).getTime(),
-          y: p.value,
-        })),
-      },
-    ],
-  });
+  const clearFocus = () => {
+    focusedMetricRef.current = null;
+  };
+
+  const buildSeries = (series) => [
+    {
+      data: series.map((p) => ({
+        x: new Date(p.time).getTime(),
+        y: p.value,
+      })),
+    },
+  ];
 
   const buildOptions = (color, metricName) => ({
     chart: {
@@ -68,8 +69,9 @@ export default function MarketTrends() {
       toolbar: { show: false },
       zoom: { enabled: false },
       events: {
-        mouseMove: () => trackFocus(metricName),
-        click: () => trackFocus(metricName),
+        mouseEnter: () => trackFocusOnce(metricName),
+        mouseLeave: clearFocus,
+        click: () => trackFocusOnce(metricName),
       },
     },
     stroke: { curve: "smooth", width: 2 },
@@ -92,12 +94,8 @@ export default function MarketTrends() {
       labels: { datetimeUTC: false },
     },
     tooltip: {
-      x: {
-        format: "dd MMM yyyy HH:mm",
-      },
-      y: {
-        formatter: (val) => val.toLocaleString(),
-      },
+      x: { format: "dd MMM yyyy HH:mm" },
+      y: { formatter: (val) => val.toLocaleString() },
     },
     grid: { show: false },
   });
@@ -114,8 +112,9 @@ export default function MarketTrends() {
         <div className="col-lg-8">
           <div
             className="card shadow-sm"
-            onMouseEnter={() => trackFocus(data.mainIndex.name)}
-            onClick={() => trackFocus(data.mainIndex.name)}
+            onMouseEnter={() => trackFocusOnce(data.mainIndex.name)}
+            onMouseLeave={clearFocus}
+            onClick={() => trackFocusOnce(data.mainIndex.name)}
           >
             <div className="card-body">
               <strong>
@@ -140,7 +139,7 @@ export default function MarketTrends() {
 
               <Chart
                 type="area"
-                {...buildSeries(data.mainIndex.series)}
+                series={buildSeries(data.mainIndex.series)}
                 options={buildOptions(
                   data.mainIndex.color,
                   data.mainIndex.name
@@ -161,8 +160,9 @@ export default function MarketTrends() {
                 <div
                   key={idx.name}
                   className="d-flex justify-content-between py-2 border-bottom"
-                  onMouseEnter={() => trackFocus(idx.name)}
-                  onClick={() => trackFocus(idx.name)}
+                  onMouseEnter={() => trackFocusOnce(idx.name)}
+                  onMouseLeave={clearFocus}
+                  onClick={() => trackFocusOnce(idx.name)}
                 >
                   <div>{idx.name}</div>
                   <div className="text-end">
@@ -170,7 +170,9 @@ export default function MarketTrends() {
                     <div
                       className={classNames(
                         "small",
-                        idx.changePercent >= 0 ? "text-success" : "text-danger"
+                        idx.changePercent >= 0
+                          ? "text-success"
+                          : "text-danger"
                       )}
                     >
                       {idx.changePercent}%
@@ -189,8 +191,9 @@ export default function MarketTrends() {
           <div className="col-md-4" key={m.name}>
             <div
               className="card shadow-sm"
-              onMouseEnter={() => trackFocus(m.name)}
-              onClick={() => trackFocus(m.name)}
+              onMouseEnter={() => trackFocusOnce(m.name)}
+              onMouseLeave={clearFocus}
+              onClick={() => trackFocusOnce(m.name)}
             >
               <div className="card-body">
                 <div className="fw-semibold">{m.name}</div>
@@ -198,7 +201,9 @@ export default function MarketTrends() {
                 <div
                   className={classNames(
                     "small mb-2",
-                    m.changePercent >= 0 ? "text-success" : "text-danger"
+                    m.changePercent >= 0
+                      ? "text-success"
+                      : "text-danger"
                   )}
                 >
                   {m.changePercent}%
@@ -206,7 +211,7 @@ export default function MarketTrends() {
 
                 <Chart
                   type="area"
-                  {...buildSeries(m.series)}
+                  series={buildSeries(m.series)}
                   options={buildOptions(m.color, m.name)}
                   height={120}
                 />
